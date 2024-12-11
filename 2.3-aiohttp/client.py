@@ -10,10 +10,8 @@ def set_token(token):
 
 def get_headers(user_id=None):
     headers = {"Content-Type": "application/json"}
-    if not user_id:
-        headers['Authorization'] = str(user_id)
-    elif TOKEN:
-        headers['Authorization'] = TOKEN
+    if TOKEN:
+        headers["token"] = TOKEN
     return headers
 
     
@@ -30,6 +28,7 @@ async def get_user(user_id):
     async with aiohttp.ClientSession() as session:
         response = await session.get(
             f'{BASE_URL}/user/{user_id}',
+            headers=get_headers()
         )
         print(response.status)
         print(await response.text())
@@ -44,6 +43,7 @@ async def update_user(user_id, password=None, email=None):
         response = await session.patch(
             f'{BASE_URL}/user/{user_id}',
             json=json_data,
+            headers=get_headers()
         )
         print(response.status)
         print(await response.text())
@@ -77,7 +77,7 @@ async def post_ad(title, description, user_id=1):
         response = await session.post(
             f'{BASE_URL}/ad',
             json={'title': title, 'description': description},
-            headers=get_headers(1)
+            headers=get_headers()
         )
         print(response.status)
         print(await response.text())
@@ -107,15 +107,31 @@ async def delete_ad(ad_id):
         print(response.status)
         print(await response.text())
 
-
+async def login_user(username, password):
+    async with aiohttp.ClientSession() as session:
+        response = await session.post(
+            f'{BASE_URL}/login',
+            json={'name': username, 'password': password},
+        )
+        response = await response.json()
+        if 'token' in response:
+            global TOKEN
+            TOKEN = response['token']
+        # user_id = response['user_id']
+        # print(user_id)
+        # print(TOKEN)
 
 
 if __name__ == '__main__':
-    # asyncio.run(add_user('user_1', 'password'))
-    # asyncio.run(get_user(1))
-    # asyncio.run(update_user(1, password='new_password', email='new_email@test.com'))
+    # asyncio.run(add_user('user_4', 'password'))
+    asyncio.run(login_user('user_1', 'password'))
+    print(TOKEN)
+    # asyncio.run(login_user('user_2', 'password'))
+    # asyncio.run(login_user('user_3', 'password'))
+    # asyncio.run(get_user(3))
+    asyncio.run(update_user(3, password='new_password', email='new_email@test.com'))
     # asyncio.run(get_all_ads())
     # asyncio.run(get_ad(1))
-    # asyncio.run(post_ad('title2', 'description2'))
+    # asyncio.run(post_ad('title1', 'description1'))
     # asyncio.run(update_ad(1, title='new_title1', description='new_description1'))
-    asyncio.run(delete_ad(2))
+    # asyncio.run(delete_ad(2))

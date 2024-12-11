@@ -1,9 +1,11 @@
 import datetime
 import os
 from dotenv import load_dotenv
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncAttrs
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped
-from sqlalchemy import Integer, String, DateTime, ForeignKey, func
+from sqlalchemy.orm import DeclarativeBase, mapped_column, Mapped, relationship
+from sqlalchemy import Integer, String, DateTime, ForeignKey,  func, text
+
 
 load_dotenv()
 
@@ -70,8 +72,18 @@ class Advertisement(Base):
             "id": self.id
         }
 
+class Token(Base):
+    __tablename__ = "tokens"
+
+    id: Mapped[str] = mapped_column(UUID, primary_key=True, server_default=func.uuid_generate_v4())
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("app_users.id"))
+    creation_time: Mapped[datetime.datetime] = mapped_column(DateTime, server_default=func.now())
+
 async def init_orm():
     async with engine.begin() as conn:
+        async with Session() as session:
+            await session.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
+            await session.commit()
         # await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
 
